@@ -1,0 +1,28 @@
+# Initial known facts
+facts = {'a': True, 'b': True, 'c': False}
+
+# Rules in the form: (conclusion, [conditions])
+rules = [('d', ['a', 'b']), ('e', ['b', 'c']), ('f', ['x'])]  # Modified 'f' to depend on 'x' which is unknown
+
+# Backward chaining algorithm
+def backward_chaining(goal, facts, rules):
+    if goal in facts:
+        return facts[goal]
+
+    for head, body in rules:
+        if head == goal:
+            if all(backward_chaining(condition, facts, rules) for condition in body):
+                facts[goal] = True  # memoization
+                return True
+
+    return False
+
+# Test goals
+goals = ['f', 'd']
+
+for goal in goals:
+    print(f"\nExpected Output for the Goal '{goal}' :")
+    if backward_chaining(goal, facts.copy(), rules):  # Use a copy to avoid altering original facts
+        print(f"The goal '{goal}' can be achieved.")
+    else:
+        print(f"The goal '{goal}' cannot be achieved.")
