@@ -1,0 +1,65 @@
+import numpy as np
+import skfuzzy as fuzz
+import matplotlib.pyplot as plt
+
+# Define the universe of discourse
+temp = np.arange(0, 41, 1)  # Temperature from 0°C to 40°C
+fan = np.arange(0, 11, 1)   # Fan speed from 0 to 10
+
+# Define fuzzy membership functions for temperature
+temp_lo = fuzz.trimf(temp, [0, 0, 20])
+temp_md = fuzz.trimf(temp, [10, 20, 30])
+temp_hi = fuzz.trimf(temp, [20, 30, 40])
+
+# Define fuzzy membership functions for fan speed
+fan_lo = fuzz.trimf(fan, [0, 0, 5])
+fan_md = fuzz.trimf(fan, [2, 5, 8])
+fan_hi = fuzz.trimf(fan, [5, 10, 10])
+
+# Crisp input
+t_input = 28
+
+# Fuzzification
+lo = fuzz.interp_membership(temp, temp_lo, t_input)
+md = fuzz.interp_membership(temp, temp_md, t_input)
+hi = fuzz.interp_membership(temp, temp_hi, t_input)
+
+# Apply rules using Mamdani method
+act_lo = np.fmin(lo, fan_lo)  # Clip fan_lo membership by lo activation
+act_md = np.fmin(md, fan_md)  # Clip fan_md membership by md activation
+act_hi = np.fmin(hi, fan_hi)  # Clip fan_hi membership by hi activation
+
+# Aggregate outputs
+agg = np.fmax(act_lo, np.fmax(act_md, act_hi))
+
+# Defuzzification
+output = fuzz.defuzz(fan, agg, 'centroid')
+activation = fuzz.interp_membership(fan, agg, output)  # Degree of membership at output
+
+# Print result
+print(f"Temperature: {t_input}°C => Fan speed: {output:.2f}")
+
+# Plotting the membership functions and results
+fig, (ax0, ax1, ax2) = plt.subplots(nrows=3, figsize=(8, 9))
+
+ax0.plot(temp, temp_lo, 'b', label='Low')
+ax0.plot(temp, temp_md, 'g', label='Medium')
+ax0.plot(temp, temp_hi, 'r', label='High')
+ax0.axvline(x=t_input, color='k', linestyle='--', label='Input Temp')
+ax0.set_title('Temperature Membership')
+ax0.legend()
+
+ax1.plot(fan, fan_lo, 'b', label='Low')
+ax1.plot(fan, fan_md, 'g', label='Medium')
+ax1.plot(fan, fan_hi, 'r', label='High')
+ax1.set_title('Fan Speed Membership Functions')
+ax1.legend()
+
+ax2.fill_between(fan, 0, agg, facecolor='Orange', alpha=0.7)
+ax2.plot([output, output], [0, activation], 'k', linewidth=1.5, alpha=0.9)
+ax2.set_title('Aggregated Output and Defuzzified Result')
+ax2.set_xlabel('Fan Speed')
+ax2.set_ylabel('Membership')
+
+plt.tight_layout()
+plt.show()
